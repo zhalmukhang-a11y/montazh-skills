@@ -7,15 +7,15 @@ def load(a,b):
     return np.frombuffer(pcm,np.int16).astype(np.float32)/32768
 lo=min(a for a,b in SPANS)-1; hi=max(b for a,b in SPANS)+1
 x=load(lo,hi); n=320; db=np.array([20*np.log10(np.sqrt((x[i:i+n]**2).mean())+1e-9) for i in range(0,len(x)-n,n)])
-sil=[]; q=db<-42; i=0
+sil=[]; q=db<getattr(P,'SIL_DB',-42); i=0
 while i<len(q):
     if q[i]:
         j=i
         while j<len(q) and q[j]: j+=1
-        if (j-i)*0.02>=0.15: sil.append((lo+i*0.02,lo+j*0.02))
+        if (j-i)*0.02>=getattr(P,'SIL_MIN',0.15): sil.append((lo+i*0.02,lo+j*0.02))
         i=j
     else: i+=1
-M=0.05
+M=getattr(P,'MARGIN',0.05)
 cuts=sorted([(s+M,e-M) for s,e in sil if e-s-2*M>0.05]+FILL)
 pieces=[]
 for s0,e0 in SPANS:
@@ -63,7 +63,7 @@ for (a,b),o in zip(pieces,offs):
     cur=a
     for s in [s for s in sent_start if o<s<o+b-a]: P2.append([cur,a+s-o]); cur=a+s-o
     P2.append([cur,b])
-pieces=P2; offs,dur=remap()
+pieces=[p for p in P2 if p[1]-p[0]>=0.04]; offs,dur=remap()
 def zoom_at(o):
     k=max([i for i,s in enumerate(sent_start) if s<=o+0.01] or [0]); return Z[k%2]
 json.dump({'pieces':pieces,'offs':offs,'sent_start':sent_start},open('work/pieces.json','w'))
