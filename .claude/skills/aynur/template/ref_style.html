@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="kk"><head><meta charset="utf-8"><title>Стиль референса</title>
+<style>
+@font-face { font-family: Mont; src: url(a/Montserrat-700.ttf); font-weight: 700; }
+@font-face { font-family: MontX; src: url(a/Montserratwght800.ttf); font-weight: 800; }
+@font-face { font-family: Hand; src: url(a/BadScript.ttf); }
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { width: 1080px; height: 1920px; background: transparent; overflow: hidden; }
+/* СТИЛЬ — цвета и размеры сняты с референса */
+:root { --title: rgb(244,229,208); --script: rgb(255,227,165); --sub-top: 1320px; --sub-size: 62px; --title-top: 250px; }
+#title { position: absolute; left: 60px; right: 60px; top: var(--title-top); text-align: center; }
+#line { display: inline-block; white-space: nowrap; font: 800 100px/1.05 MontX, sans-serif; color: var(--title);
+  text-shadow: 0 4px 22px rgba(0,0,0,.6), 0 1px 4px rgba(0,0,0,.45); letter-spacing: 0.5px; }
+#line span { display: inline-block; margin: 0 0.13em; }
+#script { display: block; font: 400 92px/1 Hand, cursive; color: var(--script); margin-top: 2px; transform: rotate(-4deg); white-space: nowrap;
+  text-shadow: 0 2px 4px rgba(0,0,0,.55), 0 0 6px rgba(255,214,120,.9), 0 0 18px rgba(255,180,70,.65), 0 0 36px rgba(255,160,50,.35); }
+#sub { position: absolute; left: 60px; right: 60px; top: var(--sub-top); text-align: center;
+  font: 700 var(--sub-size)/1.2 Mont, sans-serif; color: #fff; text-shadow: 0 2px 10px rgba(0,0,0,.55), 0 0 2px rgba(0,0,0,.4); }
+</style></head><body>
+<div id="title"><div id="line"></div><div id="script"></div></div>
+<div id="sub"></div>
+<div style="position:absolute;top:-500px;opacity:0"><b style="font:800 20px MontX">ӘҒҚ</b><i style="font:20px Hand">әғқ</i><span style="font:700 20px Mont">әғқ</span></div>
+<script>
+// SUBS и TITLES подставляет render_subs.mjs
+const clamp = x => Math.min(1, Math.max(0, x));
+const ease = x => 1 - Math.pow(1 - clamp(x), 3);
+const reveal = (el, t0, t, dur = 0.32) => {
+  const p = ease((t - t0) / dur);
+  el.style.opacity = p.toFixed(3);
+  el.style.filter = `blur(${((1 - p) * 14).toFixed(1)}px)`;
+};
+let lastS = -1, lastT = -1;
+window.render = t => {
+  // субтитры: по 1–2 слова, появляются сразу, как в референсе
+  const sub = document.getElementById('sub');
+  const k = SUBS.findIndex(s => t >= s.words[0][1] && t < s.end);
+  if (k !== lastS) { sub.textContent = k < 0 ? '' : SUBS[k].words.map(w => w[0]).join(' '); lastS = k; }
+
+  // заголовок: слова проявляются из размытия по голосу, рукописная строка со свечением
+  const box = document.getElementById('title'), line = document.getElementById('line'), sc = document.getElementById('script');
+  const j = (window.TITLES || []).findIndex(x => t >= x.start - 0.01 && t < x.end);
+  if (j !== lastT) {
+    lastT = j;
+    if (j < 0) { line.innerHTML = ''; sc.textContent = ''; }
+    else {
+      const T = TITLES[j];
+      line.style.fontSize = '100px';
+      line.innerHTML = T.words.map(w => w[0] === '/' ? '<br>' : `<span>${w[0]}</span>`).join('');
+      line.style.width = 'max-content';
+      const fit = Math.min(118, 100 * 940 / line.getBoundingClientRect().width);
+      line.style.width = '';  // подгон по ширине, как в референсе
+      line.style.fontSize = fit.toFixed(1) + 'px';
+      sc.textContent = T.script ? T.script[0] : '';
+      sc.style.fontSize = Math.min(124, Math.max(92, fit * 1.12)).toFixed(1) + 'px';
+      sc.style.width = 'max-content'; const sw = sc.getBoundingClientRect().width; sc.style.width = '';
+      if (sw > 960) sc.style.fontSize = (parseFloat(sc.style.fontSize) * 960 / sw).toFixed(1) + 'px';
+    }
+  }
+  if (j < 0) return;
+  const T = TITLES[j];
+  [...line.children].forEach((sp, i) => { reveal(sp, T.words[i][1], t); const q = ease((t - T.words[i][1]) / 0.35); sp.style.transform = `scale(${(1.18 - 0.18 * q).toFixed(3)})`; });
+  if (T.script) reveal(sc, T.script[1], t, 0.4);
+  const out = clamp((T.end - t) / 0.2);
+  box.style.opacity = out.toFixed(3);
+};
+</script></body></html>
