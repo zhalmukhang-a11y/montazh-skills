@@ -5,7 +5,7 @@
 import argparse, json, subprocess
 p = argparse.ArgumentParser(); p.add_argument("src"); p.add_argument("words")
 p.add_argument("--keep", action="append", required=True); p.add_argument("--zoom", type=float, default=1.13)
-p.add_argument("--pad", type=float, default=0.12); p.add_argument("--gap", type=float, default=0.25); p.add_argument("--y", type=float, default=0.38)
+p.add_argument("--pad", type=float, default=0.16); p.add_argument("--gap", type=float, default=0.4); p.add_argument("--y", type=float, default=0.38)
 p.add_argument("--remove", help="json [{s,e}] — вырезать эти интервалы исходника (ээ/ммм внутри слов, из fillers.py)")
 a = p.parse_args()
 W = {w['i']: w for w in json.load(open(a.words))['words']}
